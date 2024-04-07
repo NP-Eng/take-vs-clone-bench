@@ -1,44 +1,77 @@
 use ark_bls12_381::Fq;
-use criterion::{black_box, criterion_group, criterion_main, Criterion};
+use criterion::{criterion_group, criterion_main, BatchSize, Criterion};
 use std::mem;
 
-pub struct MyStruct {
-    a: Vec<Fq>,
-}
+const SIZE: usize = 1 << 24;
 
-const SIZE: usize = 1 << 20;
+mod ext {
+    use super::*;
+    pub struct MyStruct {
+        a: Vec<Fq>,
+        pub b: String,
+    }
 
-impl MyStruct {
-    fn new(size: usize) -> Self {
-        MyStruct {
-            a: (0..size).map(|i| Fq::from(i as u64)).collect(),
+    impl MyStruct {
+        pub fn a(self) -> Vec<Fq> {
+            self.a
+        }
+
+        pub fn a_ref(&self) -> &Vec<Fq> {
+            &self.a
+        }
+
+        pub fn a_mut(&mut self) -> &mut Vec<Fq> {
+            &mut self.a
         }
     }
 
-    fn take_vector(&mut self) -> Vec<Fq> {
-        mem::take(&mut self.a)
+    impl MyStruct {
+        pub fn new(size: usize) -> Self {
+            MyStruct {
+                a: (0..size).map(|i| Fq::from(i as u64)).collect(),
+                b: "Hello, World!".to_string(),
+            }
+        }
     }
 }
 
-fn clone_vector_benchmark(c: &mut Criterion) {
-    let my_struct = MyStruct::new(SIZE);
+use ext::MyStruct;
 
+pub fn clone_function(s: MyStruct) -> Vec<Fq> {
+    let a: Vec<Fq> = s.a_ref().clone();
+
+    // anonymous closure doing something to `b`, which doesn't use `a`.
+    let _ = || s.b;
+
+    a
+}
+
+pub fn take_function(mut s: MyStruct) -> Vec<Fq> {
+    let a = { mem::take(s.a_mut()) };
+
+    // anonymous closure doing something to `b`, which doesn't use `a`.
+    let _ = || s.b;
+
+    a
+}
+
+fn clone_vector_benchmark(c: &mut Criterion) {
     c.bench_function("clone_vector", |b| {
-        b.iter(|| {
-            let cloned_vector = my_struct.a.clone();
-            black_box(cloned_vector);
-        })
+        b.iter_batched(
+            || MyStruct::new(SIZE),
+            |my_struct| clone_function(my_struct),
+            BatchSize::LargeInput,
+        )
     });
 }
 
 fn take_vector_benchmark(c: &mut Criterion) {
-    let mut my_struct = MyStruct::new(SIZE);
-
     c.bench_function("take_vector", |b| {
-        b.iter(|| {
-            let taken_vector = my_struct.take_vector();
-            black_box(taken_vector);
-        })
+        b.iter_batched(
+            || MyStruct::new(SIZE),
+            |my_struct| take_function(my_struct),
+            BatchSize::LargeInput,
+        )
     });
 }
 
