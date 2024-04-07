@@ -1,8 +1,9 @@
+use ark_bls12_381::Fq;
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
 use std::mem;
 
 pub struct MyStruct {
-    a: Vec<u64>,
+    a: Vec<Fq>,
 }
 
 const SIZE: usize = 1 << 20;
@@ -10,11 +11,11 @@ const SIZE: usize = 1 << 20;
 impl MyStruct {
     fn new(size: usize) -> Self {
         MyStruct {
-            a: (0..size as u64).collect(),
+            a: (0..size).map(|i| Fq::from(i as u64)).collect(),
         }
     }
 
-    fn take_vector(&mut self) -> Vec<u64> {
+    fn take_vector(&mut self) -> Vec<Fq> {
         mem::take(&mut self.a)
     }
 }
