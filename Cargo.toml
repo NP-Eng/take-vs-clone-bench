@@ -1,0 +1,16 @@
+[package]
+name = "benchmark_test"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+
+[dev-dependencies]
+criterion = "0.5"
+
+[[bench]]
+name = "my_benchmark"
+harness = false # Disable the default harness since we're using the custom test framework
+
+[profile.bench]
+opt-level = 3
