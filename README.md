@@ -69,5 +69,3 @@ take_vector             time:   [272.09 ns 296.69 ns 321.30 ns]
 The `take` approach is 300,000x faster! Alright, it's true that the size of the cloned vector is rather large, but it is not unreasonable to have vectors of this size in cryptographic applications.
 
 Still, e.g. for a vector with ~1M elements, the cost of cloning is about 2-3ms, compared to a negligible cost of `take`. Paying a few extra milliseconds here and there might seem innocuous, but is actually quite a big deal if you want to optimize your code and provide a competitive implementation.
-
-Full example here: 
